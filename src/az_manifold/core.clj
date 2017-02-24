@@ -14,12 +14,13 @@
   [creds]
   (md/chain
    (md/future (s3/list-buckets creds))
-   (fn [ret]
-     (prn "number of buckets" (count ret)))))
+   count))
 
 (defn -main
   [& args]
-  (let [creds (aws-creds)]
-    ;; (prn creds)
-    (doseq [x (range 6)]
-      @(list-bucket creds))))
+  (let [creds (aws-creds)
+        grab (fn [_] (list-bucket creds))]
+    @(md/chain
+      (apply md/zip (map grab (range 10)))
+      (fn [all-of-them]
+        (prn all-of-them)))))
