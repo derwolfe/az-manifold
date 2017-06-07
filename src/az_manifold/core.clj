@@ -31,9 +31,11 @@
   []
   (.start (Thread. (fn [] (.join (Thread/currentThread))) "staying alive")))
 
+(def max-concurrency 20)
+
 (defn -main
   [& args]
   (staying-alive)
   (ms/consume-async #(process %) (->>
                                   (ms/->source (take 50 (range)))
-                                  (ms/batch 5))))
+                                  (ms/batch max-concurrency))))
