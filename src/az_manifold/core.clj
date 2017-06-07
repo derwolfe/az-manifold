@@ -28,14 +28,14 @@
 ;; setup a worker
 (defn process1
   [the-num out-st]
-  (prn the-num)
+  (println the-num "in p1")
   (ms/put!
    out-st
    (md/future (expensive! the-num))))
 
 (defn process2
   [val]
-  (println val)
+  (println val "in p2")
   true)
 
 (defn staying-alive
