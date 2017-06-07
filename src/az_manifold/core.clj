@@ -7,24 +7,28 @@
    [environ.core :refer [env]])
   (:gen-class))
 
-(def the-state (atom []))
 
 (defn expensive!
   [arg]
-  (Thread/sleep 2000)
-  (swap! the-state conj (java.util.Date.))
-  arg)
+  (let [now (java.util.Date.)]
+    (Thread/sleep 2000)
+    {arg now}))
+
+(def output (ms/stream))
 
 (defn process
-  [the-nums]
+  [the-nums out]
   ;; fire off x deferreds
   (prn the-nums)
-  (apply md/zip
-         (map
-          (fn [arg]
-            (prn arg)
-            (md/future (expensive! arg)))
-          the-nums)))
+  (md/chain
+   (apply md/zip
+          (map
+           (fn [arg]
+             (prn arg)
+             (md/future (expensive! arg)))
+           the-nums))
+   (fn [vals]
+     (ms/put-all! out vals))))
 
 (defn staying-alive
   "Create a background thread to keep the entire process running."
@@ -36,6 +40,8 @@
 (defn -main
   [& args]
   (staying-alive)
-  (ms/consume-async #(process %) (->>
-                                  (ms/->source (take 50 (range)))
-                                  (ms/batch max-concurrency))))
+  (ms/consume-async #(process % output) (->>
+                                         (ms/->source (take 60 (range)))
+                                         (ms/batch max-concurrency)))
+  (ms/consume-async #(pp/pprint %) output))
+  #_(pp/pprint (ms/stream->seq output))
