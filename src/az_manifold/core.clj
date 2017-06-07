@@ -55,7 +55,7 @@
    (ms/put-all! inputs (build-ins))
    (fn [result]
      ;; if true, all puts are finished, if false, a failure, otherwise we are still moving through
-     ;; the inputs
+     ;; the inputs. Shut the system down once we have the all done true value.
      (when (true? result)
        ;; the batching should be relatively evident based on the timestamp groupings being interleaved
        (pp/pprint @the-state)
