@@ -35,8 +35,7 @@
 
 (defn process2
   [val]
-  (println val "in p2")
-  true)
+  (println val "in p2"))
 
 (defn staying-alive
   "Create a background thread to keep the entire process running."
