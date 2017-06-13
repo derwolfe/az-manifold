@@ -1,10 +1,8 @@
 (ns az-manifold.core
   (:require
    [clojure.pprint :as pp]
-   [amazonica.aws.s3 :as s3]
    [manifold.deferred :as md]
-   [manifold.stream :as ms]
-   [environ.core :refer [env]])
+   [manifold.stream :as ms])
   (:gen-class))
 
 
@@ -17,24 +15,35 @@
 (def max-concurrency 3)
 
 (defn process
-  [the-nums out]
+  [the-nums out batch-size]
   ;; fire off max-concurrency deferreds
+  (prn "batch!")
   (md/chain
    (apply md/zip
           (map
            (fn [arg]
-             ;;(prn arg)
+             (prn arg)
              (md/future (expensive! arg)))
            the-nums))
    (fn [vals]
-     (println "got:" vals)
-     (ms/put-all! out vals))))
+     (let [more? (if (= (count the-nums) batch-size)
+                   true
+                   false)
+           ret @(ms/put-all! out vals)]
+       (when (not more?)
+         (ms/close! out))
+       ret))))
 
 (defn -main
   [& args]
   (let [output (ms/stream)
-        close (ms/consume-async #(process % output) (->>
-                                                     (ms/->source (take 25 (range 1 100 1)))
-                                                     (ms/batch max-concurrency)))
-        finished (doall (ms/stream->seq output))]
-    (pp/pprint finished)))
+        ;; how to close this?
+        ;; why isn't consume-async
+        vals (concat (take 25 (range 1 100 1)) nil)
+        batches (->>
+                 (ms/->source vals)
+                 (ms/batch max-concurrency))
+        _ (ms/consume-async #(process % output max-concurrency) batches)
+        finished (vec (ms/stream->seq output))]
+    (pp/pprint finished)
+    (prn "DONE")))
