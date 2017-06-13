@@ -26,10 +26,8 @@
              (md/future (expensive! arg)))
            the-nums))
    (fn [vals]
-     (let [more? (if (= (count the-nums) batch-size)
-                   true
-                   false)
-           ret @(ms/put-all! out vals)]
+     (let [more? (= (count the-nums) batch-size)
+           ret (ms/put-all! out vals)]
        (when (not more?)
          (ms/close! out))
        ret))))
