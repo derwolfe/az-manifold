@@ -60,11 +60,9 @@
                         (prn arg)
                         (md/future (expensive! arg)))
                       val))
-              (fn [vals]
-                (let [ret (ms/put-all! out vals)]
-                  ret))))
+              #(ms/put-all! out %)))
         _ (ms/connect-via batches #(p2 % output) output)
-        finished (vec (ms/stream->seq output))]
+        finished (doall (ms/stream->seq output))]
     (pp/pprint finished)
     (prn "connect-via DONE")))
 
