@@ -32,11 +32,9 @@
          (ms/close! out))
        ret))))
 
-(defn -main
-  [& args]
+(defn using-consume-async
+  []
   (let [output (ms/stream)
-        ;; how to close this?
-        ;; why isn't consume-async
         vals (concat (take 25 (range 1 100 1)) nil)
         batches (->>
                  (ms/->source vals)
@@ -44,4 +42,32 @@
         _ (ms/consume-async #(process % output max-concurrency) batches)
         finished (vec (ms/stream->seq output))]
     (pp/pprint finished)
-    (prn "DONE")))
+    (prn "consume async DONE")))
+
+(defn using-connect-via
+  []
+  (let [output (ms/stream)
+        vals (concat (take 25 (range 1 100 1)) nil)
+        batches (->>
+                 (ms/->source vals)
+                 (ms/batch max-concurrency))
+        p2 (fn [val out]
+             (prn "batch!")
+             (md/chain
+              (apply md/zip
+                     (map
+                      (fn [arg]
+                        (prn arg)
+                        (md/future (expensive! arg)))
+                      val))
+              (fn [vals]
+                (let [ret (ms/put-all! out vals)]
+                  ret))))
+        _ (ms/connect-via batches #(p2 % output) output)
+        finished (vec (ms/stream->seq output))]
+    (pp/pprint finished)
+    (prn "connect-via DONE")))
+
+(defn -main
+  [& args]
+  (using-connect-via))
