@@ -26,8 +26,8 @@
            the-nums))
    #(ms/put-all! out %)))
 
-(defn using-connect-via
-  []
+(defn -main
+  [& args]
   (let [output (ms/stream)
         vals (concat (take 25 (range 1 100 1)) nil)
         batches (->>
@@ -37,7 +37,3 @@
         finished (doall (ms/stream->seq output))]
     (pp/pprint finished)
     (prn "connect-via DONE")))
-
-(defn -main
-  [& args]
-  (using-connect-via))
